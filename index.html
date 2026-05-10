@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 BloomFree - Bloomberg Terminal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f172a; color: #e2e8f0; font-family: Arial, sans-serif; }
+        .navbar { background: #1e293b; padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .navbar h1 { color: #60a5fa; font-size: 1.5rem; }
+        .navbar input { padding: 0.5rem; width: 300px; background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 0.5rem; }
+        .container { display: flex; }
+        .sidebar { width: 250px; background: #1e293b; padding: 1rem; border-right: 1px solid #334155; }
+        .sidebar button { width: 100%; padding: 0.75rem; margin: 0.5rem 0; background: #0f172a; color: #cbd5e1; border: none; border-radius: 0.5rem; cursor: pointer; }
+        .sidebar button:hover { background: #334155; }
+        .sidebar button.active { background: #2563eb; color: white; }
+        .content { flex: 1; padding: 2rem; overflow-y: auto; }
+        .header { background: #1e293b; padding: 2rem; border-radius: 0.5rem; margin-bottom: 2rem; border: 1px solid #334155; }
+        .header h1 { color: #60a5fa; font-size: 2.5rem; margin-bottom: 1rem; }
+        .stocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+        .stock-card { background: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155; cursor: pointer; transition: all 0.3s; }
+        .stock-card:hover { border-color: #3b82f6; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); }
+        .stock-symbol { color: #60a5fa; font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stock-price { color: white; font-size: 2rem; font-weight: bold; margin: 0.5rem 0; }
+        .stock-change { font-weight: bold; }
+        .positive { color: #22c55e; }
+        .negative { color: #ef4444; }
+        .back-btn { color: #60a5fa; background: none; border: none; cursor: pointer; font-size: 1rem; margin-bottom: 1rem; }
+        .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .detail-card { background: #1e293b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #334155; }
+        .detail-label { color: #94a3b8; font-size: 0.875rem; }
+        .detail-value { color: white; font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>📊 BloomFree</h1>
+        <input type="text" id="searchInput" placeholder="Search stocks (AAPL, MSFT...)">
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <button class="nav-btn active" onclick="showDashboard()">📊 Dashboard</button>
+            <button class="nav-btn" onclick="alert('Coming Soon')">📈 Quote</button>
+            <button class="nav-btn" onclick="alert('Coming Soon')">🔍 Screener</button>
+            <button class="nav-btn" onclick="alert('Coming Soon')">📰 News</button>
+            <button class="nav-btn" onclick="alert('Coming Soon')">📅 Calendar</button>
+        </div>
+
+        <div class="content" id="content">
+            <div class="header">
+                <h1>Welcome to BloomFree</h1>
+                <p>Free real-time financial market data</p>
+            </div>
+            <h2>Top Stock Prices</h2>
+            <div class="stocks-grid" id="stocksGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        const stocks = {
+            'AAPL': { symbol: 'AAPL', c: 189.45, d: 2.50, dp: 1.33, o: 187.10, h: 190.50, l: 186.80, v: 45200000, name: 'Apple Inc.' },
+            'MSFT': { symbol: 'MSFT', c: 378.92, d: -1.20, dp: -0.32, o: 380.15, h: 381.50, l: 377.80, v: 22100000, name: 'Microsoft' },
+            'GOOGL': { symbol: 'GOOGL', c: 139.87, d: 3.15, dp: 2.30, o: 136.70, h: 140.50, l: 136.50, v: 28500000, name: 'Alphabet Inc.' },
+            'AMZN': { symbol: 'AMZN', c: 178.45, d: -2.30, dp: -1.27, o: 180.75, h: 181.20, l: 177.90, v: 35600000, name: 'Amazon' },
+            'TSLA': { symbol: 'TSLA', c: 242.84, d: 5.50, dp: 2.32, o: 237.30, h: 244.50, l: 236.80, v: 125000000, name: 'Tesla Inc.' },
+            'META': { symbol: 'META', c: 485.20, d: 8.40, dp: 1.76, o: 476.75, h: 487.50, l: 475.60, v: 18900000, name: 'Meta' },
+            'NVDA': { symbol: 'NVDA', c: 875.29, d: 12.15, dp: 1.41, o: 863.10, h: 878.50, l: 862.80, v: 35200000, name: 'NVIDIA' },
+            'AMD': { symbol: 'AMD', c: 164.50, d: -3.20, dp: -1.91, o: 167.70, h: 168.90, l: 163.45, v: 52100000, name: 'AMD' }
+        };
+
+        function showDashboard() {
+            document.getElementById('content').innerHTML = `
+                <div class="header">
+                    <h1>Welcome to BloomFree</h1>
+                    <p>Free real-time financial market data</p>
+                </div>
+                <h2>Top Stock Prices</h2>
+                <div class="stocks-grid" id="stocksGrid"></div>
+            `;
+            renderStocks();
+        }
+
+        function renderStocks() {
+            const grid = document.getElementById('stocksGrid');
+            grid.innerHTML = '';
+            Object.values(stocks).forEach(stock => {
+                const isPositive = stock.d >= 0;
+                grid.innerHTML += `
+                    <div class="stock-card" onclick="showDetail('${stock.symbol}')">
+                        <div class="stock-symbol">${stock.symbol}</div>
+                        <div class="stock-price">$${stock.c.toFixed(2)}</div>
+                        <div class="stock-change ${isPositive ? 'positive' : 'negative'}">
+                            ${isPositive ? '📈 +' : '📉 '}${stock.d.toFixed(2)} (${stock.dp.toFixed(2)}%)
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function showDetail(symbol) {
+            const stock = stocks[symbol];
+            const isPositive = stock.d >= 0;
+            document.getElementById('content').innerHTML = `
+                <button class="back-btn" onclick="showDashboard()">← Back</button>
+                <div class="header">
+                    <h1>${stock.symbol}</h1>
+                    <p>${stock.name}</p>
+                    <div style="font-size: 2.5rem; color: white; margin-top: 1rem;">$${stock.c.toFixed(2)}</div>
+                    <div style="font-size: 1.25rem; ${isPositive ? 'color: #22c55e' : 'color: #ef4444'}; font-weight: bold; margin-top: 0.5rem;">
+                        ${isPositive ? '+' : ''}${stock.d.toFixed(2)} (${stock.dp.toFixed(2)}%)
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-card"><div class="detail-label">Open</div><div class="detail-value">$${stock.o.toFixed(2)}</div></div>
+                    <div class="detail-card"><div class="detail-label">High</div><div class="detail-value">$${stock.h.toFixed(2)}</div></div>
+                    <div class="detail-card"><div class="detail-label">Low</div><div class="detail-value">$${stock.l.toFixed(2)}</div></div>
+                    <div class="detail-card"><div class="detail-label">Volume</div><div class="detail-value">${(stock.v / 1000000).toFixed(1)}M</div></div>
+                </div>
+            `;
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const symbol = this.value.toUpperCase();
+                if (stocks[symbol]) {
+                    showDetail(symbol);
+                    this.value = '';
+                } else {
+                    alert('Stock not found');
+                }
+            }
+        });
+
+        renderStocks();
+    </script>
+</body>
+</html>
